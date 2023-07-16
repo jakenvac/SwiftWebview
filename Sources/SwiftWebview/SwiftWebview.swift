@@ -21,65 +21,113 @@ struct CallbackContext {
     }
 }
 
+/// Used to set the width & height properties of a webview
 public enum SizeHint: Int32 {
+    /// Width and Height are the default size.
     case None = 0
+    /// Window size cannot be changed by the user.
     case Fixed = 1
+    /// Width and height are the minimum bounds.
     case Min = 2
+    /// Width and height are the maximum bounds.
     case Max = 3
 }
 
 public class WebView {
     private var wv: webview_t
+    private var destroyed: Bool = false
     private var callbacks: [String: CallbackContext] = [:]
 
+    /// Initializes a WebView
+    /// - Parameter debug: Debug mode flag.
     public init(_ debug: Bool = false) {
         wv = webview_create(debug ? 1 : 0, nil)
     }
 
     deinit {
-        callbacks.forEach { key, _ in
-            webview_unbind(wv, key)
+        if !destroyed {
+            destroy()
         }
-        callbacks.removeAll()
-        webview_terminate(wv)
-        webview_destroy(wv)
     }
 
+    /// Runs the webview. This is blocks the main thread
     public func run() {
-        webview_run(wv)
+        if !destroyed {
+            webview_run(wv)
+        }
     }
 
+    /// Navigates the webview to the specified URL.
+    /// - Parameter url: The URL to navigate to.
+    /// - Returns: The current instance of WebView for chaining.
     public func navigate(_ url: String) -> WebView {
-        webview_navigate(wv, url)
+        if !destroyed {
+            webview_navigate(wv, url)
+        }
         return self
     }
 
+    /// Sets the HTML content of the webview.
+    /// - Parameter html: The HTML content to set.
+    /// - Returns: The current instance of WebView for chaining.
     public func setHtml(_ html: String) -> WebView {
-        webview_set_html(wv, html)
+        if !destroyed {
+            webview_set_html(wv, html)
+        }
         return self
     }
 
+    /// Sets the title of the webview.
+    /// - Parameter title: The title to set.
+    /// - Returns: The current instance of WebView for chaining.
     public func setTitle(_ title: String) -> WebView {
-        webview_set_title(wv, title)
+        if !destroyed {
+            webview_set_title(wv, title)
+        }
         return self
     }
 
+    /// Sets the title of the webview.
+    /// - Parameter title: The title to set.
+    /// - Returns: The current instance of WebView for chaining.
     public func setSize(_ width: Int32, _ height: Int32, _ hint: SizeHint) -> WebView {
-        webview_set_size(wv, width, height, hint.rawValue)
+        if !destroyed {
+            webview_set_size(wv, width, height, hint.rawValue)
+        }
         return self
     }
 
+    /// Injects & executes JavaScript code into every new page in the webview.
+    /// It is guaranteed that this will execute before `window.onload`
+    /// - Parameter js: The JavaScript code to inject.
+    /// - Returns: The current instance of WebView for chaining.
     public func inject(_ js: String) -> WebView {
-        webview_init(wv, js)
+        if !destroyed {
+            webview_init(wv, js)
+        }
         return self
     }
 
+    /// Evaluates JavaScript code in the webview. Evaluation happens asynchronously.
+    /// The result of the JavaScript is ignored.
+    /// Execute a function bound with `bind` if you need two way communication.
+    /// - Parameter js: The JavaScript code to evaluate.
+    /// - Returns: The current instance of WebView for chaining.
     public func eval(_ js: String) -> WebView {
-        webview_eval(wv, js)
+        if !destroyed {
+            webview_eval(wv, js)
+        }
         return self
     }
 
-    public func bind(_ name: String, _ callback: @escaping JSCallback) {
+    /// Binds a swift function to a named JavaScript function in the global scope.
+    /// - Parameter name: The name that will be used to invoke the function in JavaScript.
+    /// - Parameter callback: The swift function to execute when the JS function is invoked
+    /// - Returns: The current instance of WebView for chaining.
+    public func bind(_ name: String, _ callback: @escaping JSCallback) -> WebView {
+        guard !destroyed else {
+            return self
+        }
         var context = CallbackContext(wv, callback)
         callbacks[name] = context
 
@@ -112,5 +160,41 @@ public class WebView {
         }
 
         webview_bind(wv, name, bridge, contextPtr)
+        return self
+    }
+
+    /// Unbinds a function and removes it from the global JavaScript scope
+    /// Parameter name: The name of the JavaScript function to unbind.
+    func unbind(_ name: String) -> WebView {
+        if !destroyed {
+            callbacks[name] = nil
+            webview_unbind(wv, name)
+        }
+        return self
+    }
+
+    /// Destroys the webview and closes the window.
+    /// Once a WebView has been destroyed it cannot be used.
+    /// Returns: The current instance of WebView for chaining.
+    func destroy() -> WebView {
+        if !destroyed {
+            callbacks.forEach { key, _ in
+                unbind(key)
+            }
+            callbacks.removeAll()
+            webview_destroy(wv)
+            destroyed = true
+        }
+        return self
+    }
+
+    /// Terminates the main loop and closes the window.
+    /// This function is thread safe.
+    /// Returns: The current instance of WebView for chaining.
+    func terminate() -> WebView {
+        if !destroyed {
+            webview_terminate(wv)
+        }
+        return self
     }
 }
