@@ -33,12 +33,12 @@ public enum SizeHint: Int32 {
     case Max = 3
 }
 
-public class WebView {
+public class Webview {
     private var wv: webview_t
     private var destroyed: Bool = false
     private var callbacks: [String: CallbackContext] = [:]
 
-    /// Initializes a WebView
+    /// Initializes a Webview
     /// - Parameter debug: Debug mode flag.
     public init(_ debug: Bool = false) {
         wv = webview_create(debug ? 1 : 0, nil)
@@ -59,8 +59,8 @@ public class WebView {
 
     /// Navigates the webview to the specified URL.
     /// - Parameter url: The URL to navigate to.
-    /// - Returns: The current instance of WebView for chaining.
-    public func navigate(_ url: String) -> WebView {
+    /// - Returns: The current instance of Webview for chaining.
+    public func navigate(_ url: String) -> Webview {
         if !destroyed {
             webview_navigate(wv, url)
         }
@@ -69,8 +69,8 @@ public class WebView {
 
     /// Sets the HTML content of the webview.
     /// - Parameter html: The HTML content to set.
-    /// - Returns: The current instance of WebView for chaining.
-    public func setHtml(_ html: String) -> WebView {
+    /// - Returns: The current instance of Webview for chaining.
+    public func setHtml(_ html: String) -> Webview {
         if !destroyed {
             webview_set_html(wv, html)
         }
@@ -79,8 +79,8 @@ public class WebView {
 
     /// Sets the title of the webview.
     /// - Parameter title: The title to set.
-    /// - Returns: The current instance of WebView for chaining.
-    public func setTitle(_ title: String) -> WebView {
+    /// - Returns: The current instance of Webview for chaining.
+    public func setTitle(_ title: String) -> Webview {
         if !destroyed {
             webview_set_title(wv, title)
         }
@@ -89,8 +89,8 @@ public class WebView {
 
     /// Sets the title of the webview.
     /// - Parameter title: The title to set.
-    /// - Returns: The current instance of WebView for chaining.
-    public func setSize(_ width: Int32, _ height: Int32, _ hint: SizeHint) -> WebView {
+    /// - Returns: The current instance of Webview for chaining.
+    public func setSize(_ width: Int32, _ height: Int32, _ hint: SizeHint) -> Webview {
         if !destroyed {
             webview_set_size(wv, width, height, hint.rawValue)
         }
@@ -100,8 +100,8 @@ public class WebView {
     /// Injects & executes JavaScript code into every new page in the webview.
     /// It is guaranteed that this will execute before `window.onload`
     /// - Parameter js: The JavaScript code to inject.
-    /// - Returns: The current instance of WebView for chaining.
-    public func inject(_ js: String) -> WebView {
+    /// - Returns: The current instance of Webview for chaining.
+    public func inject(_ js: String) -> Webview {
         if !destroyed {
             webview_init(wv, js)
         }
@@ -112,8 +112,8 @@ public class WebView {
     /// The result of the JavaScript is ignored.
     /// Execute a function bound with `bind` if you need two way communication.
     /// - Parameter js: The JavaScript code to evaluate.
-    /// - Returns: The current instance of WebView for chaining.
-    public func eval(_ js: String) -> WebView {
+    /// - Returns: The current instance of Webview for chaining.
+    public func eval(_ js: String) -> Webview {
         if !destroyed {
             webview_eval(wv, js)
         }
@@ -123,8 +123,8 @@ public class WebView {
     /// Binds a swift function to a named JavaScript function in the global scope.
     /// - Parameter name: The name that will be used to invoke the function in JavaScript.
     /// - Parameter callback: The swift function to execute when the JS function is invoked
-    /// - Returns: The current instance of WebView for chaining.
-    public func bind(_ name: String, _ callback: @escaping JSCallback) -> WebView {
+    /// - Returns: The current instance of Webview for chaining.
+    public func bind(_ name: String, _ callback: @escaping JSCallback) -> Webview {
         guard !destroyed else {
             return self
         }
@@ -165,7 +165,7 @@ public class WebView {
 
     /// Unbinds a function and removes it from the global JavaScript scope
     /// Parameter name: The name of the JavaScript function to unbind.
-    func unbind(_ name: String) -> WebView {
+    func unbind(_ name: String) -> Webview {
         if !destroyed {
             callbacks[name] = nil
             webview_unbind(wv, name)
@@ -174,9 +174,9 @@ public class WebView {
     }
 
     /// Destroys the webview and closes the window.
-    /// Once a WebView has been destroyed it cannot be used.
-    /// Returns: The current instance of WebView for chaining.
-    func destroy() -> WebView {
+    /// Once a Webview has been destroyed it cannot be used.
+    /// Returns: The current instance of Webview for chaining.
+    func destroy() -> Webview {
         if !destroyed {
             callbacks.forEach { key, _ in
                 unbind(key)
@@ -190,8 +190,8 @@ public class WebView {
 
     /// Terminates the main loop and closes the window.
     /// This function is thread safe.
-    /// Returns: The current instance of WebView for chaining.
-    func terminate() -> WebView {
+    /// Returns: The current instance of Webview for chaining.
+    func terminate() -> Webview {
         if !destroyed {
             webview_terminate(wv)
         }
