@@ -1,4 +1,4 @@
-# swift-webview
+# Swift Webview
 
 Multi platform webview implementation for swift
 
