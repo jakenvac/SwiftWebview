@@ -165,7 +165,7 @@ public class Webview {
 
     /// Unbinds a function and removes it from the global JavaScript scope
     /// Parameter name: The name of the JavaScript function to unbind.
-    func unbind(_ name: String) -> Webview {
+    public func unbind(_ name: String) -> Webview {
         if !destroyed {
             callbacks[name] = nil
             webview_unbind(wv, name)
@@ -176,7 +176,7 @@ public class Webview {
     /// Destroys the webview and closes the window.
     /// Once a Webview has been destroyed it cannot be used.
     /// Returns: The current instance of Webview for chaining.
-    func destroy() -> Webview {
+    public func destroy() -> Webview {
         if !destroyed {
             callbacks.forEach { key, _ in
                 unbind(key)
@@ -191,7 +191,7 @@ public class Webview {
     /// Terminates the main loop and closes the window.
     /// This function is thread safe.
     /// Returns: The current instance of Webview for chaining.
-    func terminate() -> Webview {
+    public func terminate() -> Webview {
         if !destroyed {
             webview_terminate(wv)
         }

@@ -61,11 +61,12 @@ with swift.
 - [ ] Port underlying webview code to swift
 - [ ] Implement expanded browser features such as Next, Back etc.
 - [ ] Fix memory leaks in the cocoa implementation of webview
-  - [ ] webview_set_html
-  - [ ] webview_navigate
+  - [x] webview_set_html
+  - [x] webview_navigate
   - [ ] Identify other sources of memory leaks
 - [ ] Design an easier interface for two way interaction with web content
 - [ ] Add support for OS theme detection
+- [ ] Add multi window and UI abstraction
       ... loads more.
 
 ## Todo

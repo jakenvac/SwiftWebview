@@ -784,7 +784,7 @@ public:
     objc::msg_send<void>(m_window, "center"_sel);
   }
   void navigate(const std::string &url) {
-    void *pool = objc::msg_send<id>("NSAutoreleasePool"_cls, "init"_sel);
+    id pool = objc::msg_send<id>("NSAutoreleasePool"_cls, "new"_sel);
 
     auto nsurl = objc::msg_send<id>(
         "NSURL"_cls, "URLWithString:"_sel,
@@ -796,17 +796,15 @@ public:
         objc::msg_send<id>("NSURLRequest"_cls, "requestWithURL:"_sel, nsurl));
 
     objc::msg_send<void>(pool, "drain"_sel);
-    objc::msg_send<void>(pool, "release"_sel);
   }
   void set_html(const std::string &html) {
-    void *pool = objc::msg_send<id>("NSAutoreleasePool"_cls, "init"_sel);
+    id pool = objc::msg_send<id>("NSAutoreleasePool"_cls, "new"_sel);
     objc::msg_send<void>(m_webview, "loadHTMLString:baseURL:"_sel,
                          objc::msg_send<id>("NSString"_cls,
                                             "stringWithUTF8String:"_sel,
                                             html.c_str()),
                          nullptr);
     objc::msg_send<void>(pool, "drain"_sel);
-    objc::msg_send<void>(pool, "release"_sel);
   }
   void init(const std::string &js) {
     // Equivalent Obj-C:
