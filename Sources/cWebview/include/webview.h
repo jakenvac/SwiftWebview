@@ -101,8 +101,8 @@ typedef void *webview_t;
 // is embedded into the given parent window. Otherwise a new window is created.
 // Depending on the platform, a GtkWindow, NSWindow or HWND pointer can be
 // passed here. Returns null on failure. Creation can fail for various reasons
-// such as when required runtime dependencies are missing or when window creation
-// fails.
+// such as when required runtime dependencies are missing or when window
+// creation fails.
 WEBVIEW_API webview_t webview_create(int debug, void *window);
 
 // Destroys a webview and closes the native window.
@@ -784,6 +784,8 @@ public:
     objc::msg_send<void>(m_window, "center"_sel);
   }
   void navigate(const std::string &url) {
+    void *pool = objc::msg_send<id>("NSAutoreleasePool"_cls, "init"_sel);
+
     auto nsurl = objc::msg_send<id>(
         "NSURL"_cls, "URLWithString:"_sel,
         objc::msg_send<id>("NSString"_cls, "stringWithUTF8String:"_sel,
@@ -792,17 +794,26 @@ public:
     objc::msg_send<void>(
         m_webview, "loadRequest:"_sel,
         objc::msg_send<id>("NSURLRequest"_cls, "requestWithURL:"_sel, nsurl));
+
+    objc::msg_send<void>(pool, "drain"_sel);
+    objc::msg_send<void>(pool, "release"_sel);
   }
   void set_html(const std::string &html) {
+    void *pool = objc::msg_send<id>("NSAutoreleasePool"_cls, "init"_sel);
     objc::msg_send<void>(m_webview, "loadHTMLString:baseURL:"_sel,
                          objc::msg_send<id>("NSString"_cls,
                                             "stringWithUTF8String:"_sel,
                                             html.c_str()),
                          nullptr);
+    objc::msg_send<void>(pool, "drain"_sel);
+    objc::msg_send<void>(pool, "release"_sel);
   }
   void init(const std::string &js) {
     // Equivalent Obj-C:
-    // [m_manager addUserScript:[[WKUserScript alloc] initWithSource:[NSString stringWithUTF8String:js.c_str()] injectionTime:WKUserScriptInjectionTimeAtDocumentStart forMainFrameOnly:YES]]
+    // [m_manager addUserScript:[[WKUserScript alloc] initWithSource:[NSString
+    // stringWithUTF8String:js.c_str()]
+    // injectionTime:WKUserScriptInjectionTimeAtDocumentStart
+    // forMainFrameOnly:YES]]
     objc::msg_send<void>(
         m_manager, "addUserScript:"_sel,
         objc::msg_send<id>(objc::msg_send<id>("WKUserScript"_cls, "alloc"_sel),
@@ -992,7 +1003,8 @@ private:
         "fullScreenEnabled"_str);
 
     // Equivalent Obj-C:
-    // [[config preferences] setValue:@YES forKey:@"javaScriptCanAccessClipboard"];
+    // [[config preferences] setValue:@YES
+    // forKey:@"javaScriptCanAccessClipboard"];
     objc::msg_send<id>(
         objc::msg_send<id>(config, "preferences"_sel), "setValue:forKey:"_sel,
         objc::msg_send<id>("NSNumber"_cls, "numberWithBool:"_sel, YES),
@@ -1114,7 +1126,8 @@ inline std::string narrow_string(const std::wstring &input) {
 }
 
 // Parses a version string with 1-4 integral components, e.g. "1.2.3.4".
-// Missing or invalid components default to 0, and excess components are ignored.
+// Missing or invalid components default to 0, and excess components are
+// ignored.
 template <typename T>
 std::array<unsigned int, 4>
 parse_version(const std::basic_string<T> &version) noexcept {
@@ -1803,7 +1816,8 @@ public:
     // WebView creation fails with HRESULT_FROM_WIN32(ERROR_INVALID_STATE) if
     // a running instance using the same user data folder exists, and the
     // Environment objects have different EnvironmentOptions.
-    // Source: https://docs.microsoft.com/en-us/microsoft-edge/webview2/reference/win32/icorewebview2environment?view=webview2-1.0.1150.38
+    // Source:
+    // https://docs.microsoft.com/en-us/microsoft-edge/webview2/reference/win32/icorewebview2environment?view=webview2-1.0.1150.38
     if (m_attempts < m_max_attempts) {
       ++m_attempts;
       auto res = m_attempt_handler();
@@ -2088,7 +2102,8 @@ private:
 
   // The app is expected to call CoInitializeEx before
   // CreateCoreWebView2EnvironmentWithOptions.
-  // Source: https://docs.microsoft.com/en-us/microsoft-edge/webview2/reference/win32/webview2-idl#createcorewebview2environmentwithoptions
+  // Source:
+  // https://docs.microsoft.com/en-us/microsoft-edge/webview2/reference/win32/webview2-idl#createcorewebview2environmentwithoptions
   com_init_wrapper m_com_init{COINIT_APARTMENTTHREADED};
   HWND m_window = nullptr;
   POINT m_minsz = POINT{0, 0};
