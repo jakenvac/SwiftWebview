@@ -25,6 +25,16 @@ with swift.
 - [ ] Add support for OS theme detection
       ... loads more.
 
+## Todo
+
+Slightly different from the goals, the section outlines things left
+to do to make a feature complete binding to the current webview library.
+
+- [ ] Test on:
+  - [ ] macOs - Cocoa/WebKit
+  - [ ] Windows - EdgeHtml
+  - [ ] Linux - Webkit2Gtk
+
 <a id="fork"></a>
 
 ## Fork of webview

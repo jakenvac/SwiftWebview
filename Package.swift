@@ -16,11 +16,13 @@ let package = Package(
         ),
         .target(
             name: "SwiftWebview",
-            dependencies: ["cWebview"]
-        ),
-        .testTarget(
-            name: "SwiftWebviewTests",
-            dependencies: ["SwiftWebview"]
+            dependencies: ["cWebview"],
+            linkerSettings: [
+                .linkedFramework(
+                    "WebKit",
+                    .when(platforms: [.macOS])
+                ),
+            ]
         ),
     ],
     cxxLanguageStandard: .cxx11
