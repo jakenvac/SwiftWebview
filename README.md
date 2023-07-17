@@ -5,6 +5,26 @@ Multi platform webview implementation for swift
 > A hard fork of, and based on, the popular [webview](https://github.com/webview/webview) library.
 > See [more on this below](#fork).
 
+## Dependencies
+
+Depending on the target platform, you'll need to install a few things.
+
+### macOs
+
+It just works™
+
+### Linux
+
+You'll need to install `libgtk-3-dev` and `libwebkit2gtk-4.0-dev` or your distros equivalents.
+
+```sh
+sudo apt install libgtk-3-dev libwebkit2gtk-4.0-dev
+```
+
+### Windows
+
+[TBD]
+
 ## Usage
 
 See the generated documentation [here](https://jakenvac.github.io/SwiftWebview/).
@@ -68,8 +88,8 @@ with swift.
   - [ ] Identify other sources of memory leaks
 - [ ] Design an easier interface for two way interaction with web content
 - [ ] Add support for OS theme detection
-- [ ] Add multi window and UI abstraction
-      ... loads more.
+- [ ] Add multi window and UI abstraction  
+       ... loads more.
 
 ## Todo
 
@@ -77,9 +97,9 @@ Slightly different from the goals, the section outlines things left
 to do to make a feature complete binding to the current webview library.
 
 - [ ] Test on:
-  - [ ] macOs - Cocoa/WebKit
+  - [x] macOs - Cocoa/WebKit
+  - [x] Linux - Webkit2Gtk
   - [ ] Windows - EdgeHtml
-  - [ ] Linux - Webkit2Gtk
 
 <a id="fork"></a>
 
