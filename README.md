@@ -7,7 +7,7 @@ Multi platform webview implementation for swift
 
 ## Usage
 
-See the generated documentation [here](https://jakehl.github.io/SwiftWebview/).
+See the generated documentation [here](https://jakenvac.github.io/SwiftWebview/).
 
 ### Basic Usage
 
