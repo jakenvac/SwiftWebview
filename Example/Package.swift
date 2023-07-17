@@ -13,7 +13,9 @@ let package = Package(
         // Targets can depend on other targets in this package and products from dependencies.
         .executableTarget(
             name: "Example",
-            dependencies: ["SwiftWebview"],
+            dependencies: [
+                .product(name: "SwiftWebview", package: "SwiftWebview"),
+            ],
             path: "Sources"
         ),
     ]
