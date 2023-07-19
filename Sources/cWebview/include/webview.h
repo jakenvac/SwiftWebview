@@ -987,6 +987,7 @@ private:
     if (m_debug) {
       // Equivalent Obj-C:
       // [[config preferences] setValue:@YES forKey:@"developerExtrasEnabled"];
+      // @TODO Experiment: I think we can remove this call.
       objc::msg_send<id>(
           objc::msg_send<id>(config, "preferences"_sel), "setValue:forKey:"_sel,
           objc::msg_send<id>("NSNumber"_cls, "numberWithBool:"_sel, YES),
@@ -1019,6 +1020,13 @@ private:
     objc::msg_send<void>(m_webview, "initWithFrame:configuration:"_sel,
                          CGRectMake(0, 0, 0, 0), config);
     objc::msg_send<void>(m_webview, "setUIDelegate:"_sel, ui_delegate);
+
+    if (m_debug) {
+      objc::msg_send<void>(
+          m_webview, "setInspectable:"_sel,
+          objc::msg_send<id>("NSNumber"_cls, "numberWithBool:"_sel, YES));
+    }
+
     auto script_message_handler = create_script_message_handler();
     objc::msg_send<void>(m_manager, "addScriptMessageHandler:name:"_sel,
                          script_message_handler, "external"_str);
