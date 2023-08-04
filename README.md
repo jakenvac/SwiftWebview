@@ -2,8 +2,7 @@
 
 Multi platform webview implementation for swift
 
-> A hard fork of, and based on, the popular [webview](https://github.com/webview/webview) library.
-> See [more on this below](#fork).
+> Swift wrappers for the popular [webview](https://github.com/webview/webview) library.
 
 ## Dependencies
 
@@ -23,7 +22,7 @@ sudo apt install libgtk-3-dev libwebkit2gtk-4.0-dev
 
 ### Windows
 
-[TBD]
+Windows is currently untested & not officially supported. Contributions are welcome here.
 
 ## Usage
 
@@ -73,42 +72,3 @@ wv.run()
 var result = window.boundFunction("World");
 console.log(result); // Hello World
 ```
-
-## Goals
-
-The goals of this pacakge deviate from simply being a binding to [webview](https://github.com/webview/webview).
-I would like this to become a goto for people wanting a quick way to make a cross platform desktop application
-with swift.
-
-- [ ] Port underlying webview code to swift
-- [ ] Implement expanded browser features such as Next, Back etc.
-- [ ] Fix memory leaks in the cocoa implementation of webview
-  - [x] webview_set_html
-  - [x] webview_navigate
-  - [ ] Identify other sources of memory leaks
-- [ ] Design an easier interface for two way interaction with web content
-- [ ] Add support for OS theme detection
-- [ ] Add multi window and UI abstraction  
-       ... loads more.
-
-## Todo
-
-Slightly different from the goals, the section outlines things left
-to do to make a feature complete binding to the current webview library.
-
-- [ ] Test on:
-  - [x] macOs - Cocoa/WebKit
-  - [x] Linux - Webkit2Gtk
-  - [ ] Windows - EdgeHtml
-
-<a id="fork"></a>
-
-## Fork of webview
-
-Why a hard fork?
-
-I chose to hard fork the webview package as it is now largely unmaintained and there exists several bugs that
-I intend to fix. If the original package starts accepting PR's again I will gladly contribute my fixes back but for
-now I think my efforts are better spent on this work.
-
-In the long term I also want to port as much of the webview code directly into swift.

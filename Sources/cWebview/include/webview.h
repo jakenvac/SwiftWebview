@@ -96,13 +96,13 @@ extern "C" {
 typedef void *webview_t;
 
 // Creates a new webview instance. If debug is non-zero - developer tools will
-// be enabled (if the platform supports them). Window parameter can be a
+// be enabled (if the platform supports them). The window parameter can be a
 // pointer to the native window handle. If it's non-null - then child WebView
 // is embedded into the given parent window. Otherwise a new window is created.
 // Depending on the platform, a GtkWindow, NSWindow or HWND pointer can be
 // passed here. Returns null on failure. Creation can fail for various reasons
-// such as when required runtime dependencies are missing or when window
-// creation fails.
+// such as when required runtime dependencies are missing or when window creation
+// fails.
 WEBVIEW_API webview_t webview_create(int debug, void *window);
 
 // Destroys a webview and closes the native window.
@@ -121,9 +121,9 @@ WEBVIEW_API void webview_terminate(webview_t w);
 WEBVIEW_API void
 webview_dispatch(webview_t w, void (*fn)(webview_t w, void *arg), void *arg);
 
-// Returns a native window handle pointer. When using GTK backend the pointer
-// is GtkWindow pointer, when using Cocoa backend the pointer is NSWindow
-// pointer, when using Win32 backend the pointer is HWND pointer.
+// Returns a native window handle pointer. When using a GTK backend the pointer
+// is a GtkWindow pointer, when using a Cocoa backend the pointer is a NSWindow
+// pointer, when using a Win32 backend the pointer is a HWND pointer.
 WEBVIEW_API void *webview_get_window(webview_t w);
 
 // Updates the title of the native window. Must be called from the UI thread.
@@ -134,7 +134,7 @@ WEBVIEW_API void webview_set_title(webview_t w, const char *title);
 #define WEBVIEW_HINT_MIN 1   // Width and height are minimum bounds
 #define WEBVIEW_HINT_MAX 2   // Width and height are maximum bounds
 #define WEBVIEW_HINT_FIXED 3 // Window size can not be changed by a user
-// Updates native window size. See WEBVIEW_HINT constants.
+// Updates the size of the native window. See WEBVIEW_HINT constants.
 WEBVIEW_API void webview_set_size(webview_t w, int width, int height,
                                   int hints);
 
@@ -150,7 +150,7 @@ WEBVIEW_API void webview_navigate(webview_t w, const char *url);
 WEBVIEW_API void webview_set_html(webview_t w, const char *html);
 
 // Injects JavaScript code at the initialization of the new page. Every time
-// the webview will open a the new page - this initialization code will be
+// the webview will open a new page - this initialization code will be
 // executed. It is guaranteed that code is executed before window.onload.
 WEBVIEW_API void webview_init(webview_t w, const char *js);
 
@@ -160,10 +160,10 @@ WEBVIEW_API void webview_init(webview_t w, const char *js);
 WEBVIEW_API void webview_eval(webview_t w, const char *js);
 
 // Binds a native C callback so that it will appear under the given name as a
-// global JavaScript function. Internally it uses webview_init(). Callback
-// receives a request string and a user-provided argument pointer. Request
-// string is a JSON array of all the arguments passed to the JavaScript
-// function.
+// global JavaScript function. Internally it uses webview_init(). The callback
+// receives a sequential request id, a request string and a user-provided
+// argument pointer. The request string is a JSON array of all the arguments
+// passed to the JavaScript function.
 WEBVIEW_API void webview_bind(webview_t w, const char *name,
                               void (*fn)(const char *seq, const char *req,
                                          void *arg),
@@ -172,10 +172,10 @@ WEBVIEW_API void webview_bind(webview_t w, const char *name,
 // Removes a native C callback that was previously set by webview_bind.
 WEBVIEW_API void webview_unbind(webview_t w, const char *name);
 
-// Allows to return a value from the native binding. Original request pointer
-// must be provided to help internal RPC engine match requests with responses.
-// If status is zero - result is expected to be a valid JSON result value.
-// If status is not zero - result is an error JSON object.
+// Allows to return a value from the native binding. A request id pointer must
+// be provided to allow the internal RPC engine to match requests and responses.
+// If the status is zero - the result is expected to be a valid JSON value.
+// If the status is not zero - the result is an error JSON object.
 WEBVIEW_API void webview_return(webview_t w, const char *seq, int status,
                                 const char *result);
 
@@ -217,6 +217,7 @@ WEBVIEW_API const webview_version_info_t *webview_version();
 
 #include <array>
 #include <atomic>
+#include <cstdint>
 #include <functional>
 #include <future>
 #include <map>
@@ -683,6 +684,28 @@ Result msg_send(Args... args) noexcept {
   return invoke<Result>(objc_msgSend, args...);
 }
 
+// Wrapper around NSAutoreleasePool that drains the pool on destruction.
+class autoreleasepool {
+public:
+  autoreleasepool()
+      : m_pool(msg_send<id>(objc_getClass("NSAutoreleasePool"),
+                            sel_registerName("new"))) {}
+
+  ~autoreleasepool() {
+    if (m_pool) {
+      msg_send<void>(m_pool, sel_registerName("drain"));
+    }
+  }
+
+  autoreleasepool(const autoreleasepool &) = delete;
+  autoreleasepool &operator=(const autoreleasepool &) = delete;
+  autoreleasepool(autoreleasepool &&) = delete;
+  autoreleasepool &operator=(autoreleasepool &&) = delete;
+
+private:
+  id m_pool{};
+};
+
 } // namespace objc
 
 enum NSBackingStoreType : NSUInteger { NSBackingStoreBuffered = 2 };
@@ -784,7 +807,7 @@ public:
     objc::msg_send<void>(m_window, "center"_sel);
   }
   void navigate(const std::string &url) {
-    id pool = objc::msg_send<id>("NSAutoreleasePool"_cls, "new"_sel);
+    objc::autoreleasepool pool;
 
     auto nsurl = objc::msg_send<id>(
         "NSURL"_cls, "URLWithString:"_sel,
@@ -794,24 +817,18 @@ public:
     objc::msg_send<void>(
         m_webview, "loadRequest:"_sel,
         objc::msg_send<id>("NSURLRequest"_cls, "requestWithURL:"_sel, nsurl));
-
-    objc::msg_send<void>(pool, "drain"_sel);
   }
   void set_html(const std::string &html) {
-    id pool = objc::msg_send<id>("NSAutoreleasePool"_cls, "new"_sel);
+    objc::autoreleasepool pool;
     objc::msg_send<void>(m_webview, "loadHTMLString:baseURL:"_sel,
                          objc::msg_send<id>("NSString"_cls,
                                             "stringWithUTF8String:"_sel,
                                             html.c_str()),
                          nullptr);
-    objc::msg_send<void>(pool, "drain"_sel);
   }
   void init(const std::string &js) {
     // Equivalent Obj-C:
-    // [m_manager addUserScript:[[WKUserScript alloc] initWithSource:[NSString
-    // stringWithUTF8String:js.c_str()]
-    // injectionTime:WKUserScriptInjectionTimeAtDocumentStart
-    // forMainFrameOnly:YES]]
+    // [m_manager addUserScript:[[WKUserScript alloc] initWithSource:[NSString stringWithUTF8String:js.c_str()] injectionTime:WKUserScriptInjectionTimeAtDocumentStart forMainFrameOnly:YES]]
     objc::msg_send<void>(
         m_manager, "addUserScript:"_sel,
         objc::msg_send<id>(objc::msg_send<id>("WKUserScript"_cls, "alloc"_sel),
@@ -987,7 +1004,6 @@ private:
     if (m_debug) {
       // Equivalent Obj-C:
       // [[config preferences] setValue:@YES forKey:@"developerExtrasEnabled"];
-      // @TODO Experiment: I think we can remove this call.
       objc::msg_send<id>(
           objc::msg_send<id>(config, "preferences"_sel), "setValue:forKey:"_sel,
           objc::msg_send<id>("NSNumber"_cls, "numberWithBool:"_sel, YES),
@@ -1002,8 +1018,7 @@ private:
         "fullScreenEnabled"_str);
 
     // Equivalent Obj-C:
-    // [[config preferences] setValue:@YES
-    // forKey:@"javaScriptCanAccessClipboard"];
+    // [[config preferences] setValue:@YES forKey:@"javaScriptCanAccessClipboard"];
     objc::msg_send<id>(
         objc::msg_send<id>(config, "preferences"_sel), "setValue:forKey:"_sel,
         objc::msg_send<id>("NSNumber"_cls, "numberWithBool:"_sel, YES),
@@ -1022,9 +1037,25 @@ private:
     objc::msg_send<void>(m_webview, "setUIDelegate:"_sel, ui_delegate);
 
     if (m_debug) {
-      objc::msg_send<void>(
-          m_webview, "setInspectable:"_sel,
-          objc::msg_send<id>("NSNumber"_cls, "numberWithBool:"_sel, YES));
+      // Explicitly make WKWebView inspectable via Safari on OS versions that
+      // disable the feature by default (macOS 13.3 and later) and support
+      // enabling it. According to Apple, the behavior on older OS versions is
+      // for content to always be inspectable in "debug builds".
+      // Testing shows that this is true for macOS 12.6 but somehow not 10.15.
+      // https://webkit.org/blog/13936/enabling-the-inspection-of-web-content-in-apps/
+#if defined(__has_builtin)
+#if __has_builtin(__builtin_available)
+      if (__builtin_available(macOS 13.3, iOS 16.4, tvOS 16.4, *)) {
+        objc::msg_send<void>(
+            m_webview, "setInspectable:"_sel,
+            objc::msg_send<id>("NSNumber"_cls, "numberWithBool:"_sel, YES));
+      }
+#else
+#error __builtin_available not supported by compiler
+#endif
+#else
+#error __has_builtin not supported by compiler
+#endif
     }
 
     auto script_message_handler = create_script_message_handler();
@@ -1111,11 +1142,17 @@ inline std::wstring widen_string(const std::string &input) {
 
 // Converts a wide (UTF-16-encoded) string into a narrow (UTF-8-encoded) string.
 inline std::string narrow_string(const std::wstring &input) {
+  struct wc_flags {
+    enum TYPE : unsigned int {
+      // WC_ERR_INVALID_CHARS
+      err_invalid_chars = 0x00000080U
+    };
+  };
   if (input.empty()) {
     return std::string();
   }
   UINT cp = CP_UTF8;
-  DWORD flags = WC_ERR_INVALID_CHARS;
+  DWORD flags = wc_flags::err_invalid_chars;
   auto input_c = input.c_str();
   auto input_length = static_cast<int>(input.size());
   auto required_length = WideCharToMultiByte(cp, flags, input_c, input_length,
@@ -1132,8 +1169,7 @@ inline std::string narrow_string(const std::wstring &input) {
 }
 
 // Parses a version string with 1-4 integral components, e.g. "1.2.3.4".
-// Missing or invalid components default to 0, and excess components are
-// ignored.
+// Missing or invalid components default to 0, and excess components are ignored.
 template <typename T>
 std::array<unsigned int, 4>
 parse_version(const std::basic_string<T> &version) noexcept {
@@ -1286,6 +1322,9 @@ struct user32_symbols {
   using DPI_AWARENESS_CONTEXT = HANDLE;
   using SetProcessDpiAwarenessContext_t = BOOL(WINAPI *)(DPI_AWARENESS_CONTEXT);
   using SetProcessDPIAware_t = BOOL(WINAPI *)();
+  // Use intptr_t as the underlying type because we need to
+  // reinterpret_cast<DPI_AWARENESS_CONTEXT> which is a pointer.
+  enum class dpi_awareness : intptr_t { per_monitor_aware = -3 };
 
   static constexpr auto SetProcessDpiAwarenessContext =
       library_symbol<SetProcessDpiAwarenessContext_t>(
@@ -1366,7 +1405,10 @@ private:
 inline bool enable_dpi_awareness() {
   auto user32 = native_library(L"user32.dll");
   if (auto fn = user32.get(user32_symbols::SetProcessDpiAwarenessContext)) {
-    if (fn(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE)) {
+    auto dpi_awareness =
+        reinterpret_cast<user32_symbols::DPI_AWARENESS_CONTEXT>(
+            user32_symbols::dpi_awareness::per_monitor_aware);
+    if (fn(dpi_awareness)) {
       return true;
     }
     return GetLastError() == ERROR_ACCESS_DENIED;
@@ -1822,8 +1864,7 @@ public:
     // WebView creation fails with HRESULT_FROM_WIN32(ERROR_INVALID_STATE) if
     // a running instance using the same user data folder exists, and the
     // Environment objects have different EnvironmentOptions.
-    // Source:
-    // https://docs.microsoft.com/en-us/microsoft-edge/webview2/reference/win32/icorewebview2environment?view=webview2-1.0.1150.38
+    // Source: https://docs.microsoft.com/en-us/microsoft-edge/webview2/reference/win32/icorewebview2environment?view=webview2-1.0.1150.38
     if (m_attempts < m_max_attempts) {
       ++m_attempts;
       auto res = m_attempt_handler();
@@ -2108,8 +2149,7 @@ private:
 
   // The app is expected to call CoInitializeEx before
   // CreateCoreWebView2EnvironmentWithOptions.
-  // Source:
-  // https://docs.microsoft.com/en-us/microsoft-edge/webview2/reference/win32/webview2-idl#createcorewebview2environmentwithoptions
+  // Source: https://docs.microsoft.com/en-us/microsoft-edge/webview2/reference/win32/webview2-idl#createcorewebview2environmentwithoptions
   com_init_wrapper m_com_init{COINIT_APARTMENTTHREADED};
   HWND m_window = nullptr;
   POINT m_minsz = POINT{0, 0};
@@ -2314,3 +2354,4 @@ WEBVIEW_API const webview_version_info_t *webview_version() {
 #endif /* WEBVIEW_HEADER */
 #endif /* __cplusplus */
 #endif /* WEBVIEW_H */
+
