@@ -1,8 +1,6 @@
 # Swift Webview
 
-Multi platform webview implementation for swift
-
-> Swift wrappers for the popular [webview](https://github.com/webview/webview) library.
+Cross platform [webview](https://github.com/webview/webview) bindings for swift.
 
 ## Dependencies
 
